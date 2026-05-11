@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel de Conciliação - Ailog</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; padding: 20px; }
+        .container { max-width: 1200px; margin: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #0078d4; }
+        .card h3 { margin-top: 0; color: #333; font-size: 1.1em; }
+        .card p { margin: 5px 0; color: #666; font-size: 0.9em; }
+        .btn-anexo { display: block; background: #e1f1ff; color: #0078d4; text-align: center; padding: 10px; margin-top: 15px; text-decoration: none; border-radius: 4px; font-weight: bold; cursor: move; }
+        .btn-baixa { width: 100%; background: #28a745; color: white; border: none; padding: 10px; margin-top: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-baixa:hover { background: #218838; }
+        .user-info { font-size: 0.9em; color: #555; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Notas Pendentes</h1>
+        <div id="userInfo" class="user-info">Carregando usuário...</div>
+    </div>
+    
+    <div id="painelCards" class="grid">
+        </div>
+</div>
+
+<script>
+    // 1. CONFIGURAÇÕES - PREENCHA AQUI
+    const URL_ROBO_BAIXA = "    - https://default51076a2fc6d847298fdd3009efad16.96.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/5663399492d74030a83aebc6fa50b67f/triggers/manual/paths/invoke?api-version=1"; 
+    const EMAIL_ADM = "thiago.ferracini@ailog.com.br";
+    
+    // Simulação do usuário logado (No futuro, se usar SharePoint/PowerPages isso é automático)
+    // Para testar agora, você pode mudar esse e-mail manualmente aqui embaixo:
+    const usuarioLogado = "thiago.ferracini@ailog.com.br"; 
+
+    document.getElementById('userInfo').innerText = "Usuário: " + usuarioLogado;
+
+    // 2. FUNÇÃO PARA BUSCAR NOTAS (Simulada para estrutura)
+    async function carregarNotas() {
+        // Aqui você faria o fetch para a sua lista do SharePoint
+        // Por enquanto, vamos simular a lógica de filtro que você pediu:
+        
+        const todasAsNotas = [
+            { id: 101, posto: "Posto Shell 01", cnpj: "12.345.678/0001-01", analista: "camila@ailog.com.br", link: "#" },
+            { id: 102, posto: "Posto Ipiranga X", cnpj: "98.765.432/0001-99", analista: "thiago.ferracini@ailog.com.br", link: "#" }
+        ];
+
+        const painel = document.getElementById('painelCards');
+        painel.innerHTML = "";
+
+        todasAsNotas.forEach(nota => {
+            // LÓGICA DE VISIBILIDADE (ADM vê tudo, Analista vê apenas o dele)
+            if (usuarioLogado === EMAIL_ADM || usuarioLogado === nota.analista) {
+                const card = `
+                    <div class="card">
+                        <h3>${nota.posto}</h3>
+                        <p><strong>CNPJ:</strong> ${nota.cnpj}</p>
+                        <p><strong>Responsável:</strong> ${nota.analista}</p>
+                        
+                        <a href="${nota.link}" class="btn-anexo" draggable="true">
+                            📄 Arraste para o WebRouter
+                        </a>
+                        
+                        <button class="btn-baixa" onclick="darBaixa(${nota.id})">
+                            Confirmar Conciliação
+                        </button>
+                    </div>
+                `;
+                painel.innerHTML += card;
+            }
+        });
+    }
+
+    // 3. FUNÇÃO PARA DAR BAIXA (Chama seu robô HTTP)
+    async function darBaixa(idNota) {
+        if(confirm("Deseja confirmar a conciliação desta nota?")) {
+            const response = await fetch(URL_ROBO_BAIXA, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ID: idNota })
+            });
+
+            if (response.ok) {
+                alert("Nota conciliada com sucesso!");
+                location.reload(); // Recarrega para sumir o card
+            } else {
+                alert("Erro ao dar baixa. Verifique o robô.");
+            }
+        }
+    }
+
+    carregarNotas();
+</script>
+
+</body>
+</html>
