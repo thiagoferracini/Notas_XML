@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recolha de Notas - Ailog</title>
+    <style>
+        :root { --primary: #0078d4; --success: #28a745; --bg: #f3f2f1; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; max-width: 1000px; margin: 0 auto 30px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; max-width: 1000px; margin: 0 auto; }
+        .card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-top: 4px solid var(--primary); }
+        .card h3 { margin: 0 0 10px 0; color: #333; }
+        .info { font-size: 0.9em; color: #666; margin-bottom: 5px; }
+        .btn-link { display: block; text-align: center; background: #f0f7ff; color: var(--primary); padding: 12px; margin: 15px 0; border-radius: 6px; text-decoration: none; font-weight: bold; border: 1px dashed var(--primary); }
+        .btn-confirmar { width: 100%; background: var(--success); color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-confirmar:hover { background: #218838; transform: scale(1.02); }
+        .user-tag { background: #ddd; padding: 5px 12px; border-radius: 20px; font-size: 0.8em; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h2>Notas Pendentes</h2>
+    <span id="userDisplay" class="user-tag">Carregando...</span>
+</div>
+
+<div id="gridNotas" class="grid">
+    </div>
+
+<script>
+    // 1. CONFIGURAÇÕES (Troque pelo link que você copiou do Power Automate)
+    const URL_POWER_AUTOMATE = "COLE_AQUI_A_URL_DO_ROBO_DE_BAIXA";
+    const MEU_EMAIL_ADM = "thiago.ferracini@ailog.com.br";
+
+    // 2. PEGAR USUÁRIO DA URL (Ex: site.com/?user=camila@ailog.com.br)
+    const params = new URLSearchParams(window.location.search);
+    const usuarioLogado = params.get('user') || "visitante";
+    document.getElementById('userDisplay').innerText = "Usuário: " + usuarioLogado;
+
+    // 3. LISTA DE NOTAS (Simulação - Você pode cadastrar as pendentes aqui para testar)
+    const notasPendentes = [
+        { id: 1, posto: "Posto Shell Exemplo", cnpj: "12.345.678/0001-01", analista: "camila@ailog.com.br", link: "LINK_DO_ONEDRIVE_AQUI" },
+        { id: 2, posto: "Posto Ipiranga Teste", cnpj: "98.765.432/0001-99", analista: "thiago.ferracini@ailog.com.br", link: "LINK_DO_ONEDRIVE_AQUI" }
+    ];
+
+    function renderizarCards() {
+        const container = document.getElementById('gridNotas');
+        container.innerHTML = "";
+
+        const notasFiltradas = notasPendentes.filter(n => 
+            usuarioLogado === MEU_EMAIL_ADM || n.analista === usuarioLogado
+        );
+
+        if(notasFiltradas.length === 0) {
+            container.innerHTML = "<p>Nenhuma nota pendente para você.</p>";
+            return;
+        }
+
+        notasFiltradas.forEach(nota => {
+            container.innerHTML += `
+                <div class="card">
+                    <h3>${nota.posto}</h3>
+                    <div class="info"><strong>CNPJ:</strong> ${nota.cnpj}</div>
+                    <div class="info"><strong>Analista:</strong> ${nota.analista}</div>
+                    <a href="${nota.link}" target="_blank" class="btn-link">📄 Abrir Nota (Arraste para WebRouter)</a>
+                    <button class="btn-confirmar" onclick="confirmarBaixa(${nota.id})">Confirmar Conciliação</button>
+                </div>
+            `;
+        });
+    }
+
+    async function confirmarBaixa(id) {
+        if(!confirm("Confirmar a baixa desta nota no sistema?")) return;
+
+        try {
+            const response = await fetch(URL_POWER_AUTOMATE, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ID: id })
+            });
+
+            if(response.ok) {
+                alert("Sucesso! Nota conciliada.");
+                // Aqui você removeria da lista real, para teste vamos apenas avisar
+                location.reload();
+            } else {
+                alert("Erro no robô. Verifique se o fluxo está Ativado.");
+            }
+        } catch (err) {
+            alert("Erro de conexão. A página precisa estar no GitHub Pages.");
+        }
+    }
+
+    renderizarCards();
+</script>
+</body>
+</html>
